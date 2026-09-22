@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — EventHub{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>Admin dashboard</h1>
+    <p>A running scoreboard of everything on EventHub.</p>
+</section>
+
+<div class="stats-grid">
+    <div class="stat-card"><span class="stat-num">{{ stats.total_users }}</span><span>Total users</span></div>
+    <div class="stat-card"><span class="stat-num">{{ stats.total_events }}</span><span>Total events</span></div>
+    <div class="stat-card"><span class="stat-num">{{ stats.upcoming_events }}</span><span>Upcoming events</span></div>
+    <div class="stat-card"><span class="stat-num">{{ stats.total_registrations }}</span><span>Tickets issued</span></div>
+</div>
+
+<h2>All events</h2>
+<table class="data-table">
+    <thead><tr><th>Title</th><th>Category</th><th>Date</th><th>Organizer</th><th>Seats</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for e in events %}
+        <tr>
+            <td><a href="{{ url_for('event_detail', event_id=e['id']) }}">{{ e['title'] }}</a></td>
+            <td><span class="badge badge-{{ e['category']|cat_slug }}">{{ e['category'] }}</span></td>
+            <td>{{ e['event_date'] }}</td>
+            <td>{{ e['organizer_name'] }}</td>
+            <td>{{ e['seats_taken'] }}/{{ e['capacity'] }}</td>
+            <td>
+                <a href="{{ url_for('edit_event', event_id=e['id']) }}" class="btn-secondary-sm">Edit</a>
+                <a href="{{ url_for('event_participants', event_id=e['id']) }}" class="btn-secondary-sm">Ticket holders</a>
+                <form method="post" action="{{ url_for('delete_event', event_id=e['id']) }}" style="display:inline" onsubmit="return confirm('Delete this event?');">
+                    <button type="submit" class="btn-danger-sm">Delete</button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<h2>All users</h2>
+<table class="data-table">
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for u in users %}
+        <tr>
+            <td>{{ u['full_name'] }}</td>
+            <td>{{ u['email'] }}</td>
+            <td><span class="badge {% if u['role'] == 'admin' %}badge-admin{% else %}badge-muted{% endif %}">{{ u['role'] }}</span></td>
+            <td>{{ u['created_at'][:10] }}</td>
+            <td>
+                <form method="post" action="{{ url_for('toggle_user_role', user_id=u['id']) }}" style="display:inline">
+                    <button type="submit" class="btn-secondary-sm">
+                        {{ 'Revoke Admin' if u['role'] == 'admin' else 'Make Admin' }}
+                    </button>
+                </form>
+                {% if u['id'] != current_user['id'] %}
+                <form method="post" action="{{ url_for('admin_delete_user', user_id=u['id']) }}" style="display:inline" onsubmit="return confirm('Delete this user? Their events will also be removed.');">
+                    <button type="submit" class="btn-danger-sm">Delete</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

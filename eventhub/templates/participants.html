@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Ticket Holders — {{ event['title'] }}{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>Ticket holders</h1>
+    <p>{{ participants|length }} of {{ event['capacity'] }} seats filled for {{ event['title'] }}.</p>
+</section>
+
+{% if participants|length == 0 %}
+    <div class="empty-state">
+        <h2>No one's holding a ticket yet</h2>
+        <p>Share the event page to start filling seats.</p>
+    </div>
+{% else %}
+    <table class="data-table">
+        <thead>
+            <tr><th>Name</th><th>Email</th><th>Phone</th><th>Registered at</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+        {% for p in participants %}
+            <tr>
+                <td>{{ p['full_name'] }}</td>
+                <td>{{ p['email'] }}</td>
+                <td>{{ p['phone'] or '—' }}</td>
+                <td>{{ p['registered_at'][:16] }}</td>
+                <td>
+                    <form method="post" action="{{ url_for('remove_participant', event_id=event['id'], user_id=p['id']) }}" onsubmit="return confirm('Remove this ticket holder?');">
+                        <button type="submit" class="btn-danger-sm">Remove</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+<p><a href="{{ url_for('event_detail', event_id=event['id']) }}">&larr; Back to event</a></p>
+{% endblock %}

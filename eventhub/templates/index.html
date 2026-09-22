@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Browse Events — EventHub{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>What's on the board</h1>
+    <p>Browse upcoming events and hold your seat.</p>
+</section>
+
+<form class="search-bar" method="get" action="{{ url_for('index') }}">
+    <input type="text" name="q" placeholder="Search by title, description, or location..." value="{{ search }}">
+    <select name="category">
+        <option value="">All categories</option>
+        {% for c in categories %}
+            <option value="{{ c['category'] }}" {% if c['category'] == category %}selected{% endif %}>{{ c['category'] }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn-primary">Search</button>
+    {% if search or category %}
+        <a href="{{ url_for('index') }}" class="btn-secondary">Clear</a>
+    {% endif %}
+</form>
+
+{% if categories|length > 0 %}
+    <div class="chip-row">
+        {% for c in categories %}
+            <a href="{{ url_for('index', category=c['category'], q=search) }}"
+               class="chip {% if c['category'] == category %}is-active{% endif %}">
+                <span class="chip-dot spine-{{ c['category']|cat_slug }}"></span>{{ c['category'] }}
+            </a>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if events|length == 0 %}
+    <div class="empty-state">
+        <h2>Nothing on the board</h2>
+        <p>Try a different search{% if not current_user %}, or <a href="{{ url_for('login') }}">log in</a> to host one!{% else %}, or <a href="{{ url_for('create_event') }}">host a new event</a>.{% endif %}</p>
+    </div>
+{% else %}
+    <div class="ticket-list">
+        {% for e in events %}
+            {% set td = e['event_date']|ticket_date %}
+            <div class="ticket {% if e['event_date'] < today %}is-past{% endif %}">
+                <div class="ticket-spine spine-{{ e['category']|cat_slug }}"></div>
+                <div class="ticket-main">
+                    <div class="ticket-top-row">
+                        <span class="badge badge-{{ e['category']|cat_slug }}">{{ e['category'] }}</span>
+                        {% if e['event_date'] < today %}<span class="badge badge-muted">Past</span>{% endif %}
+                    </div>
+                    <h3 class="ticket-title"><a href="{{ url_for('event_detail', event_id=e['id']) }}">{{ e['title'] }}</a></h3>
+                    <p class="ticket-meta">
+                        <span class="meta-item">📍 {{ e['location'] }}</span>
+                        <span class="meta-item">👤 {{ e['organizer_name'] }}</span>
+                    </p>
+                    <p class="ticket-desc">{{ e['description'][:130] }}{% if e['description']|length > 130 %}…{% endif %}</p>
+                </div>
+                <div class="ticket-divider"></div>
+                <div class="ticket-stub">
+                    <span class="stub-date"><span class="stub-day">{{ td.day }}</span><span class="stub-mon">{{ td.mon }}</span></span>
+                    {% if e['seats_taken'] >= e['capacity'] %}
+                        <span class="stub-sold-out">Sold out</span>
+                    {% else %}
+                        <span class="stub-seats">{{ e['seats_taken'] }}/{{ e['capacity'] }} seats</span>
+                    {% endif %}
+                    <a href="{{ url_for('event_detail', event_id=e['id']) }}" class="stub-link">View ticket</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}
